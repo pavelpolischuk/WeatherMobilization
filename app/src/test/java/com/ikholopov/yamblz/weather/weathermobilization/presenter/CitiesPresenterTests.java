@@ -40,6 +40,7 @@ import static org.mockito.Mockito.when;
 public class CitiesPresenterTests {
 
     @Mock MainRouter router;
+    @Mock KeyBoardHelper keyBoardHelper;
     @Mock PlacesService placesService;
     @Mock CityRepository repository;
     @Mock SchedulerProvider schedulers;
@@ -56,7 +57,7 @@ public class CitiesPresenterTests {
         when(view.searchClears()).thenReturn(Observable.empty());
         when(view.citiesOptionSelections()).thenReturn(Observable.empty());
 
-        presenter = new CitiesPresenter(router, placesService, repository, testSchedulers);
+        presenter = new CitiesPresenter(router, placesService, repository, testSchedulers, keyBoardHelper);
     }
 
     @Test

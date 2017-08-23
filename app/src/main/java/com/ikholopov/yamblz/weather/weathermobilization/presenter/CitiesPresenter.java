@@ -32,23 +32,27 @@ public class CitiesPresenter extends RxPresenter {
     final PlacesService placesService;
     final CityRepository repository;
     final SchedulerProvider schedulers;
+    final KeyBoardHelper keyBoardHelper;
 
     private CitiesView view;
     private Disposable subscriptionOnSavedCities;
 
     @Inject
     public CitiesPresenter(MainRouter router, PlacesService placesService,
-                           CityRepository repository, SchedulerProvider schedulers) {
+                           CityRepository repository, SchedulerProvider schedulers,
+                           KeyBoardHelper keyBoardHelper) {
         this.router = router;
         this.placesService = placesService;
         this.repository = repository;
         this.schedulers = schedulers;
+        this.keyBoardHelper = keyBoardHelper;
     }
 
     public void bind(CitiesView view) {
         this.view = view;
 
         save(view.settingsRequests()
+                .doOnNext(o -> keyBoardHelper.hideKeyboard())
                 .subscribe(o -> router.showSettings()));
 
         Observable<CharSequence> searches = view.citiesSearches()
@@ -66,6 +70,8 @@ public class CitiesPresenter extends RxPresenter {
                 .filter(str -> str.length() > 0)
                 .switchMapSingle(this::search)
                 .observeOn(schedulers.main())
+                .retryWhen(errors  -> errors
+                        .flatMap(error -> Observable.timer(2, TimeUnit.SECONDS)))
                 .doOnNext(o -> {
                     clearSubscriptionOnSavedCities();
                     view.setDescription(R.string.search_result);
@@ -101,6 +107,7 @@ public class CitiesPresenter extends RxPresenter {
                             .toSingle()
                 )
                 .observeOn(schedulers.main())
+                .doOnNext(o -> keyBoardHelper.hideKeyboard())
                 .subscribe(router::showCityWeather, throwable -> {
                     Log.e("city select", throwable.getMessage(), throwable);
                     view.onError();
